@@ -1,5 +1,6 @@
 #pragma once
 
+/*master open3d 0.9.0 folder names are different from 0.12.0 
 #include "CameraSetup.h"
 #include "OkvisSLAMSystem.h"
 #include "Open3D/Integration/ScalableTSDFVolume.h"
@@ -9,6 +10,15 @@
 #include "Open3D/geometry/PointCloud.h"
 #include "Open3D/geometry/TriangleMesh.h"
 #include "Open3D/camera/PinholeCameraIntrinsic.h"
+*/
+#include "open3d/pipelines/integration/ScalableTSDFVolume.h"
+#include "open3d/visualization/utility/DrawGeometry.h"
+#include "open3d/io/TriangleMeshIO.h"
+#include "open3d/io/ImageIO.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/camera/PinholeCameraIntrinsic.h"
+
 #include "Types.h"
 #include "SaveFrame.h"
 #include <map>
@@ -25,9 +35,15 @@ namespace ark {
 	class SegmentedMesh {
 
 	public:
+/*master
 		SegmentedMesh(std::string& recon_config, OkvisSLAMSystem& slam, CameraSetup* camera, bool blocking = true);
 		SegmentedMesh(std::string& recon_config);
 		SegmentedMesh();
+*/
+		SegmentedMesh(double voxel_length,
+			double sdf_trunc,
+			open3d::pipelines::integration::TSDFVolumeColorType color_type,
+			double block_length);
 
 		//~SegmentedMesh();
 
@@ -53,11 +69,12 @@ namespace ark {
 		std::shared_ptr<open3d::geometry::TriangleMesh> ExtractTotalTriangleMesh();
 		std::shared_ptr<open3d::geometry::PointCloud> ExtractCurrentVoxelPointCloud();
 		std::vector<std::pair<std::shared_ptr<open3d::geometry::TriangleMesh>, 
-			Eigen::Matrix4d>> GetTriangleMeshes();
+			Eigen::Matrix4d>> GetTriangleMeshes(); // Cause 2.C : Double STL. Cause 2.a : STL containers on FSVEO. This line is wrong, should be fixed.
 		void SetLatestKeyFrame(MapKeyFrame::Ptr frame);
 		std::vector<int> get_kf_ids();
 		void StartNewBlock();
 		void SetActiveMapIndex(int map_index);
+/*master
 
 		std::tuple<std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>, 
 			std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>,
@@ -66,14 +83,25 @@ namespace ark {
 
 		void AddRenderMutex(std::mutex* render_mutex, std::string render_mutex_key);
 		void RemoveRenderMutex(std::string render_mutex_key);
+*/
+		void DeleteMapsAfterIndex(int map_index);
+		void Render(std::vector<std::vector<Eigen::Vector3d>> &mesh_vertices, std::vector<std::vector<Eigen::Vector3d>> &mesh_colors, 
+		std::vector<std::vector<Eigen::Vector3i>> &mesh_triangles, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> &mesh_transforms, std::vector<int> &mesh_enabled); 
+		// Moon : Cause 4 = Cause 2.a + Cause 3.
 		void WriteMeshes();
 
 		void SetIntegrationEnabled(bool enabled);
 
 	public:
+/*master
 		open3d::integration::TSDFVolumeColorType color_type_ = open3d::integration::TSDFVolumeColorType::RGB8;
 		int integration_frame_stride_ = 3;
 		int extraction_frame_stride_ = 60;
+*/
+		double block_length_;
+		double sdf_trunc_;
+		double voxel_length_;
+		open3d::pipelines::integration::TSDFVolumeColorType color_type_;
 
 		int camera_height_, camera_width_;
 
@@ -102,7 +130,7 @@ namespace ark {
 
 
 		//stores current scalable tsdf volume
-		open3d::integration::ScalableTSDFVolume * active_volume;
+		open3d::pipelines::integration::ScalableTSDFVolume * active_volume;
 		MapKeyFrame::Ptr active_volume_keyframe;
 		int active_volume_map_index = 0;
 

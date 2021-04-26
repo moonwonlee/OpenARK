@@ -2,6 +2,7 @@
 
 namespace ark {
 
+/*master
 	std::shared_ptr<open3d::geometry::RGBDImage> generateRGBDImageFromCV(cv::Mat color_mat, cv::Mat depth_mat, double max_depth, int width, int height) {
 
 		auto color_im = std::make_shared<open3d::geometry::Image>();
@@ -98,6 +99,20 @@ namespace ark {
 		if (blocking) {
 			Eigen::Vector3i * temp = &current_block;
 			temp = NULL;
+*/
+	SegmentedMesh::SegmentedMesh(double voxel_length,
+	               double sdf_trunc,
+	               open3d::pipelines::integration::TSDFVolumeColorType color_type,
+	               double block_length)
+	:	block_length_(block_length),
+		voxel_length_(voxel_length),
+		sdf_trunc_(sdf_trunc),
+		color_type_(color_type){
+			Eigen::Vector3i * temp = &current_block;
+			temp = NULL;
+			active_volume = new open3d::pipelines::integration::ScalableTSDFVolume(voxel_length_,
+	               sdf_trunc_,
+	               color_type_);
 		}
 		active_volume = new open3d::integration::ScalableTSDFVolume(voxel_length_,
                sdf_trunc_,      
@@ -282,7 +297,7 @@ namespace ark {
 		completed_meshes.push_back(completed_mesh);
 
 
-		active_volume = new open3d::integration::ScalableTSDFVolume(voxel_length_, sdf_trunc_, color_type_);
+		active_volume = new open3d::pipelines::integration::ScalableTSDFVolume(voxel_length_, sdf_trunc_, color_type_);
 		active_volume_keyframe = latest_keyframe;
 		active_volume_map_index = active_map_index;
 
@@ -436,10 +451,16 @@ namespace ark {
 		return t;
 	}
 
+/*master
+*/
+	//only updates the active mesh // this part added for open3d 0.12.0
+	void SegmentedMesh::Render(std::vector<std::vector<Eigen::Vector3d>> &mesh_vertices, std::vector<std::vector<Eigen::Vector3d>> &mesh_colors, 
+		std::vector<std::vector<Eigen::Vector3i>> &mesh_triangles, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> &mesh_transforms, std::vector<int> &mesh_enabled) { // Moon : Rule 2.c?? fixed.Cause 4 = Cause 2.b + Cause 3. This line might be wrong, const + & or & alone might be added
 
 	void SegmentedMesh::AddRenderMutex(std::mutex* render_mutex, std::string render_mutex_key) {
 		render_mutexes.insert(std::pair<std::string, std::mutex*>(render_mutex_key, render_mutex));
 	}
+  // this part added for open3d 0.12.0
 
 	void SegmentedMesh::RemoveRenderMutex(std::string render_mutex_key) {
 		auto iter = this->render_mutexes.find(render_mutex_key);
@@ -571,10 +592,14 @@ namespace ark {
 				}
 			}
 
+/*master
 			int i = 0;
 			for (auto iter = mesh_map.begin(); iter != mesh_map.end(); iter++) {
 				open3d::io::WriteTriangleMeshToPLY("mesh" + std::to_string(i++) + ".ply", *(iter->second), false, false, true, true, false, false);
 			}
+*/
+                std::cout << "writing meshes" << std::endl;
+
 
 		} else {
 			auto mesh = active_volume->ExtractTriangleMesh();

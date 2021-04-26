@@ -40,7 +40,16 @@ int main(int argc, char **argv)
 	if (argc > 3) frameOutput = argv[3];
 	else frameOutput = "./frames/";
 
-	OkvisSLAMSystem slam(vocabFilename, configFilename);
+	okvis::VioParameters parameters;
+    okvis::VioParametersReader vio_parameters_reader;
+    try {
+        vio_parameters_reader.readConfigFile(configFilename);
+    }
+    catch (okvis::VioParametersReader::Exception ex) {
+        std::cerr << ex.what() << "\n";
+    }
+    vio_parameters_reader.getParameters(parameters);
+    OkvisSLAMSystem slam(vocabFilename, parameters);
 
 	//readConfig(configFilename);
 
@@ -75,7 +84,55 @@ int main(int argc, char **argv)
 	int frame_counter = 1;
 	bool do_integration = true;
 
-	SegmentedMesh * mesh = new SegmentedMesh(configFilename, slam, &camera);
+/*master
+  SegmentedMesh * mesh = new SegmentedMesh(configFilename, slam, &camera);
+*/
+	KeyFrameAvailableHandler saveFrameHandler([&saveFrame, &frame_counter, &do_integration, &current_map_index](MultiCameraFrame::Ptr frame) {
+		if (!do_integration || frame_counter % 3 != 0) {
+			return;
+		}
+
+		cv::Mat imRGB;
+		cv::Mat imDepth;
+
+		frame->getImage(imRGB, 3);
+
+		frame->getImage(imDepth, 4);
+
+		Eigen::Matrix4d transform(frame->T_WC(3));
+
+		saveFrame->frameWriteMapped(imRGB, imDepth, transform, frame->frameId_, current_map_index);
+	});
+	
+	if (save_frames) {
+		slam.AddKeyFrameAvailableHandler(saveFrameHandler, "saveframe");
+	}
+
+	SegmentedMesh * mesh = new SegmentedMesh(voxel_size, voxel_size * 5, open3d::pipelines::integration::TSDFVolumeColorType::RGB8, block_size);
+
+	std::vector<float> intrinsics = camera.getColorIntrinsics();
+	auto intr = open3d::camera::PinholeCameraIntrinsic(640, 480, intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3]);
+
+	FrameAvailableHandler tsdfFrameHandler([&mesh, &frame_counter, &do_integration, intr](MultiCameraFrame::Ptr frame) {
+		if (!do_integration || frame_counter % 3 != 0) {
+			return;
+		}
+
+		cout << "Integrating frame number: " << frame->frameId_ << endl;
+
+		cv::Mat color_mat;
+		cv::Mat depth_mat;
+
+
+		frame->getImage(color_mat, 3);
+		frame->getImage(depth_mat, 4);
+
+		auto rgbd_image = generateRGBDImageFromCV(color_mat, depth_mat);
+
+		mesh->Integrate(*rgbd_image, intr, frame->T_WC(3).inverse());
+	});
+
+	slam.AddFrameAvailableHandler(tsdfFrameHandler, "tsdfframe");
 
 	MyGUI::MeshWindow mesh_win("Mesh Viewer", mesh_view_width, mesh_view_height);
 	MyGUI::Mesh mesh_obj("mesh", mesh);
@@ -130,10 +187,14 @@ int main(int argc, char **argv)
 
 		//Get current camera frame
 		MultiCameraFrame::Ptr frame(new MultiCameraFrame);
-		camera.update(*frame);
+		camera.update(frame);
 
+/*master
 		//Get or wait for IMU Data
 		std::vector<ImuPair> imuData;
+*/
+		//Get or wait for IMU Data until current frame 
+		std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> imuData;
 		camera.getImuToTime(frame->timestamp_, imuData);
 
 		//Add data to SLAM system
@@ -160,11 +221,15 @@ int main(int argc, char **argv)
 	cout << "updating transforms" << endl;
 
 	std::vector<int> frameIdOut;
-	std::vector<Eigen::Matrix4d> traj;
+	std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj; // Moon, Cause 2.a STL with FSVEO.
 
 	slam.getMappedTrajectory(frameIdOut, traj);
 
+/*master
 	std::map<int, Eigen::Matrix4d> keyframemap;
+*/
+	std::map<int, Eigen::Matrix4d, std::less<int>, Eigen::aligned_allocator<std::pair<const int, Eigen::Matrix4d>>> keyframemap; // Moon, Cause 2.1 STL with FSVEO.
+
 	for (int i = 0; i < frameIdOut.size(); i++) {
 		keyframemap[frameIdOut[i]] = traj[i];
 	}
