@@ -16,7 +16,7 @@ endif()
 
 set( LIB_NAME "OpenARK" )
 set( DEMO_NAME "OpenARK_hand_demo" )
-set( AVATAR_DEMO_NAME "OpenARK_avatar_demo")
+#set( AVATAR_DEMO_NAME "OpenARK_avatar_demo")
 set( SLAM_DEMO_NAME "OpenARK_SLAM_demo")
 set( 3DRECON_DATA_NAME "3dRecon_Data_Recording")
 set( DATA_RECORDING_NAME "OpenARK_data_recording")
@@ -26,11 +26,11 @@ set( TEST_NAME "OpenARK_test" )
 set( UNITY_PLUGIN_NAME "UnityPlugin" )
 
 # Options.
-option( EIGEN_HACK "EIGEN_FIX_UBUNTU" ON)
+option( EIGEN_FIX_UBUNTU "EIGEN_FIX_UBUNTU" ON)
 option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" OFF )
 option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" OFF)
 option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" OFF)
-option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" ON)
+option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" OFF)
 option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF)
 option( BUILD_SLAM_RECORDING "BUILD_SLAM_RECORDING" OFF)
 option( BUILD_SLAM_REPLAYING "BUILD_SLAM_REPLAYING" ON)
@@ -287,7 +287,7 @@ set(
   MockD435iCamera.cpp
   HumanDetector.cpp
   HumanBody.cpp
-  Avatar.cpp
+  #Avatar.cpp
   glfwManager.cpp
   OkvisSLAMSystem.cpp
   SaveFrame.cpp
@@ -316,7 +316,7 @@ set(
   ${INCLUDE_DIR}/MockD435iCamera.h
   ${INCLUDE_DIR}/HumanDetector.h
   ${INCLUDE_DIR}/HumanBody.h
-  ${INCLUDE_DIR}/Avatar.h
+  #${INCLUDE_DIR}/Avatar.h
   ${INCLUDE_DIR}/nanoflann.hpp
   ${INCLUDE_DIR}/SLAMSystem.h
   ${INCLUDE_DIR}/OkvisSLAMSystem.h
@@ -439,9 +439,9 @@ if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/pose-net/pose.caffemodel")
     file(DOWNLOAD "https://github.com/sxyu/OpenARK-Deps/releases/download/0.0.1/pose.caffemodel" "${PROJECT_SOURCE_DIR}/config/pose-net/pose.caffemodel")
 endif()
 
-if (NOT EXISTS "${PROJECT_SOURCE_DIR}/data/avatar-model/model.pcd")
-    message( WARNING "SMPL model files are not present, so the avatar module will not work. To use the avatar module and/or run the avatar demo, you will need to download the SMPL model manually. Please follow the instructions in data/avatar-model/README.md. Note that SMPL is available for non-commercial, academic research purposes only." )
-endif()
+# if (NOT EXISTS "${PROJECT_SOURCE_DIR}/data/avatar-model/model.pcd")
+#     message( WARNING "SMPL model files are not present, so the avatar module will not work. To use the avatar module and/or run the avatar demo, you will need to download the SMPL model manually. Please follow the instructions in data/avatar-model/README.md. Note that SMPL is available for non-commercial, academic research purposes only." )
+# endif()
 
 add_library( ${LIB_NAME} STATIC "${INCLUDE_DIR}/Core.h" ${SOURCES} ${HEADERS} )
 set_target_properties( ${LIB_NAME} PROPERTIES OUTPUT_NAME
@@ -463,13 +463,13 @@ if( ${BUILD_HAND_DEMO} )
     set_target_properties( ${DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
 endif( ${BUILD_HAND_DEMO} )
 
-if( ${BUILD_AVATAR_DEMO} )
-    add_executable( ${AVATAR_DEMO_NAME} AvatarDemo.cpp )
-    target_include_directories( ${AVATAR_DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
-    target_link_libraries( ${AVATAR_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} )
-    set_target_properties( ${AVATAR_DEMO_NAME} PROPERTIES OUTPUT_NAME ${AVATAR_DEMO_NAME} )
-    set_target_properties( ${AVATAR_DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
-endif( ${BUILD_AVATAR_DEMO} )
+# if( ${BUILD_AVATAR_DEMO} )
+#     add_executable( ${AVATAR_DEMO_NAME} AvatarDemo.cpp )
+#     target_include_directories( ${AVATAR_DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
+#     target_link_libraries( ${AVATAR_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} )
+#     set_target_properties( ${AVATAR_DEMO_NAME} PROPERTIES OUTPUT_NAME ${AVATAR_DEMO_NAME} )
+#     set_target_properties( ${AVATAR_DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
+# endif( ${BUILD_AVATAR_DEMO} )
 
 if( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
     add_executable( ${SLAM_DEMO_NAME} SlamDemo435i.cpp )

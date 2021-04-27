@@ -77,6 +77,14 @@ bool MockD435iCamera::getImuToTime(double timestamp, std::vector<ImuPair, Eigen:
     }
     return true;
 };
+// newly added
+std::vector<float> MockD435iCamera::getColorIntrinsics() {
+    //TODO: once this class can read the intr.yaml, update this
+    //currently, this function should never be called, this should crash anything that calls this
+    std::vector<float> vect{ -1, -1, -1, -1 };
+    return vect;
+}
+
 
 const std::string MockD435iCamera::getModelName() const
 {

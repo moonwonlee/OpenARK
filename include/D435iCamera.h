@@ -42,7 +42,7 @@ namespace ark {
         /**
          * Get image size
          */
-        cv::Size getImageSize() const;
+        cv::Size getImageSize() const override; // newly added
 
         /** 
          * Sets the external hardware sync ans starts the camera
@@ -56,7 +56,7 @@ namespace ark {
 
         bool getImuToTime(double timestamp, std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& data_out);
 
-        std::vector<float> getColorIntrinsics();
+        std::vector<float> getColorIntrinsics() override; // newly added 
 
         const rs2_intrinsics &getDepthIntrinsics();
 

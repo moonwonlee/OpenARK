@@ -40,15 +40,11 @@ namespace ark {
         depthPath = folderPath + "depth/";
         tcwPath = folderPath + "tcw/";
         mapIdLog = folderPath + "mapIdLog.txt";
+        activeFramesLog = folderPath + "activeFrames.txt"; // newly added
 
         createFolder(rgbPath);
         createFolder(depthPath);
         createFolder(tcwPath);
-
-        std::ofstream file2(mapIdLog, std::fstream::app);
-        if (file2.is_open()) {
-            file2.close();
-        }
 
     }
 
@@ -94,6 +90,17 @@ namespace ark {
         }
         file2.close();
 
+    }
+    // newly added function and fuction header added in SaveFrame.h header file.
+    void SaveFrame::writeActiveFrames(std::vector<int> frame_ids) {
+        printf("updating transforms inside file\n");
+        std::ofstream file1(activeFramesLog);
+        if (file1.is_open()) {
+            for (int frame_id : frame_ids) {
+                file1 << frame_id << '\n';
+            }
+        }
+        file1.close();
     }
 
 	void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d, std::less<int>, Eigen::aligned_allocator<std::pair<const int, Eigen::Matrix4d>>> &keyframemap) {

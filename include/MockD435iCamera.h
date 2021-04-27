@@ -41,7 +41,7 @@ namespace ark {
         /**
          * Get image size
          */
-        cv::Size getImageSize() const;
+        cv::Size getImageSize() const override; // newly added ,override part  
 
         /** 
          * Dummy method
@@ -58,6 +58,8 @@ namespace ark {
 
         std::vector<ImuPair> getAllImu();
 
+        std::vector<float> getColorIntrinsics() override; // newly added, override part
+    
     protected:
 
         cv::Mat loadImg(path filename);

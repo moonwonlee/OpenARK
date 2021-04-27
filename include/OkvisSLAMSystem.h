@@ -60,6 +60,8 @@ namespace ark {
 
         void display();
 
+        void getActiveFrames(std::vector<int>& frame_ids); // newly added
+
         void getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut); // Moon: Cause 4 = Cause 2.a + Cause 3.
 
 		void getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut); // Moon: Cause 4 = Cause 2.a + Cause 3.
@@ -72,11 +74,16 @@ namespace ark {
         int getActiveMapIndex() {
             return active_map_index;
         }
-        //std::shared_ptr<okvis::ThreadedKFVio> okvis_estimator_;
+        std::shared_ptr<okvis::ThreadedKFVio> okvis_estimator_; // newly added (actually uncommented)
 
-        //stack it up
-        okvis::ThreadedKFVio okvis_estimator_;
-        bool stop_requested = false;
+        // newly added
+        std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> getMap(int index) {
+            if (sparse_maps_.find(index) == sparse_maps_.end()) {
+                return nullptr;
+            } else {
+                return sparse_maps_[index];
+            }
+        }
 
     protected:
         void KeyFrameConsumerLoop();
@@ -84,8 +91,17 @@ namespace ark {
         void FrameConsumerLoop();
 
         void createNewMap();
-
-        okvis::VioParameters& initParams(const std::string & strSettingsFile);
+        // newly added
+        void setEnableLoopClosure(bool enableUseLoopClosures, std::string vocabPath,
+                bool binaryVocab, cv::DescriptorMatcher* matcher);
+        // newly added, eigen...
+        bool detectLoopClosure(MapKeyFrame::Ptr kf, MapKeyFrame::Ptr &loop_kf,
+                Eigen::Affine3d &transformEstimate);
+        // newly added, eigen...
+        std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> mergeMaps(
+                std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> olderMap,
+                std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> currentMap,
+                MapKeyFrame::Ptr kf, MapKeyFrame::Ptr loop_kf, Eigen::Affine3d &transformEstimate);
 
     private:
         okvis::Time start_;
@@ -97,11 +113,28 @@ namespace ark {
         std::thread frameConsumerThread_;
         int num_frames_;
         std::atomic<bool> kill;
-        std::vector<std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>> sparse_map_vector;
+        std::map<int, std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>> sparse_maps_; // newly added actually modified.
         bool new_map_checker;
         int map_timer;
         int active_map_index;
+        int map_id_counter_; // newly added
         std::string strVocFile;
+
+        // newly added from.
+        bool useLoopClosures_;
+        std::shared_ptr<DLoopDetector::TemplatedLoopDetector<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK> >detector_;
+        std::shared_ptr<DBoW2::TemplatedVocabulary<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK> >vocab_;
+        std::shared_ptr<cv::DescriptorMatcher> matcher_;
+        std::map<int, MapKeyFrame::Ptr> bowFrameMap_;
+        int bowId_;
+        double lastLoopClosureTimestamp_;
+        // correction for convert an obj coordinate in other's map 
+        // because reset okvis estimator also reset coordinate system
+        Eigen::Matrix4d correction_{Eigen::Matrix4d::Identity()};
+
+        static const int kMapCreationCooldownFrames_ = 15;
+        static const int kMinimumKeyframes_ = 20;
+        // newly added done.
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     }; // OkvisSLAMSystem
